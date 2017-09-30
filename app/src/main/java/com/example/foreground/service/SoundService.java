@@ -2,6 +2,7 @@ package com.example.foreground.service;
 
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -27,6 +28,8 @@ import com.example.foreground.constant.MusicConstants;
 
 
 public class SoundService extends Service implements MediaPlayer.OnErrorListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnBufferingUpdateListener {
+
+    private final static String FOREGROUND_CHANNEL_ID = "foreground_channel_id";
     private final static String TAG = SoundService.class.getSimpleName();
     static private int mStateService = MusicConstants.STATE_SERVICE.NOT_INIT;
     private final Uri mUriRadioDefault = Uri.parse("https://nfw.ria.ru/flv/audio.aspx?ID=75651129&type=mp3");
@@ -210,7 +213,15 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
     }
 
     private Notification prepareNotification() {
-
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O &&
+                mNotificationManager.getNotificationChannel(FOREGROUND_CHANNEL_ID) == null) {
+            // The user-visible name of the channel.
+            CharSequence name = getString(R.string.text_value_radio_notification);
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel mChannel = new NotificationChannel(FOREGROUND_CHANNEL_ID, name, importance);
+            mChannel.enableVibration(false);
+            mNotificationManager.createNotificationChannel(mChannel);
+        }
         Intent notificationIntent = new Intent(this, MainActivity.class);
         notificationIntent.setAction(MusicConstants.ACTION.MAIN_ACTION);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB) {
@@ -257,18 +268,23 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
                 break;
         }
 
-        NotificationCompat.Builder lNotificationBuilder = new NotificationCompat.Builder(this);
+        NotificationCompat.Builder lNotificationBuilder;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            lNotificationBuilder = new NotificationCompat.Builder(this, FOREGROUND_CHANNEL_ID);
+        } else {
+            lNotificationBuilder = new NotificationCompat.Builder(this);
+        }
         lNotificationBuilder
                 .setContent(lRemoteViews)
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
+                .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                .setOnlyAlertOnce(true)
                 .setOngoing(true)
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
             lNotificationBuilder.setVisibility(Notification.VISIBILITY_PUBLIC);
         }
-
         return lNotificationBuilder.build();
 
     }
