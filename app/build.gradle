@@ -5,12 +5,12 @@ repositories {
 }
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion "26.0.1"
+    compileSdkVersion 27
+    buildToolsVersion project.ext.buildToolsVersion
     defaultConfig {
         applicationId "com.example.foreground"
         minSdkVersion 15
-        targetSdkVersion 26
+        targetSdkVersion 27
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -24,14 +24,14 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile "com.android.support:support-compat:${project.ext.supportLibVersion}"
-    compile "com.android.support:support-v4:${project.ext.supportLibVersion}"
-    compile "com.android.support:design:${project.ext.supportLibVersion}"
-    compile "com.android.support:appcompat-v7:${project.ext.supportLibVersion}"
-    compile 'com.android.support.constraint:constraint-layout:1.0.2'
-    testCompile 'junit:junit:4.12'
+    implementation "com.android.support:support-compat:${project.ext.supportLibVersion}"
+    implementation "com.android.support:support-v4:${project.ext.supportLibVersion}"
+    implementation "com.android.support:design:${project.ext.supportLibVersion}"
+    implementation "com.android.support:appcompat-v7:${project.ext.supportLibVersion}"
+    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
+    testImplementation 'junit:junit:4.12'
 }
