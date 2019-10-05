@@ -6,7 +6,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.2'
+        classpath 'com.android.tools.build:gradle:3.5.1'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -16,10 +16,11 @@ buildscript {
 allprojects {
     repositories {
         jcenter()
+        google()
     }
     project.ext {
-        buildToolsVersion = '27.0.3'
-        supportLibVersion = '27.1.1'  // variable that can be referenced to keep support libs consistent
+        buildToolsVersion = '28.0.3'
+        androidxVersion = '1.1.0'  // variable that can be referenced to keep androidx consistent
         googleLibVersion = '11.2.2'  // variable that can be referenced to keep google libs consistent
     }
 }

@@ -17,7 +17,7 @@ import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
-import android.support.v4.app.NotificationCompat;
+import androidx.core.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
@@ -31,7 +31,7 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
 
     private final static String FOREGROUND_CHANNEL_ID = "foreground_channel_id";
     private final static String TAG = SoundService.class.getSimpleName();
-    static private int mStateService = MusicConstants.STATE_SERVICE.NOT_INIT;
+    static private int sStateService = MusicConstants.STATE_SERVICE.NOT_INIT;
     private final Uri mUriRadioDefault = Uri.parse("https://nfw.ria.ru/flv/audio.aspx?ID=75651129&type=mp3");
     private final Object mLock = new Object();
     private final Handler mHandler = new Handler();
@@ -64,7 +64,7 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
     }
 
     public static int getState() {
-        return mStateService;
+        return sStateService;
     }
 
     @Override
@@ -76,15 +76,15 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
     public void onCreate() {
         super.onCreate();
         Log.d(SoundService.class.getSimpleName(), "onCreate()");
-        mStateService = MusicConstants.STATE_SERVICE.NOT_INIT;
+        sStateService = MusicConstants.STATE_SERVICE.NOT_INIT;
         mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         mUriRadio = mUriRadioDefault;
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
+    public int onStartCommand(final Intent intent, int flags, int startId) {
 
-        if (intent == null) {
+        if (intent == null || intent.getAction() == null) {
             stopForeground(true);
             stopSelf();
             return START_NOT_STICKY;
@@ -94,7 +94,7 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
         switch (intent.getAction()) {
             case MusicConstants.ACTION.START_ACTION:
                 Log.i(TAG, "Received start Intent ");
-                mStateService = MusicConstants.STATE_SERVICE.PREPARE;
+                sStateService = MusicConstants.STATE_SERVICE.PREPARE;
                 startForeground(MusicConstants.NOTIFICATION_ID_FOREGROUND_SERVICE, prepareNotification());
                 destroyPlayer();
                 initPlayer();
@@ -102,7 +102,7 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
                 break;
 
             case MusicConstants.ACTION.PAUSE_ACTION:
-                mStateService = MusicConstants.STATE_SERVICE.PAUSE;
+                sStateService = MusicConstants.STATE_SERVICE.PAUSE;
                 mNotificationManager.notify(MusicConstants.NOTIFICATION_ID_FOREGROUND_SERVICE, prepareNotification());
                 Log.i(TAG, "Clicked Pause");
                 destroyPlayer();
@@ -110,7 +110,7 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
                 break;
 
             case MusicConstants.ACTION.PLAY_ACTION:
-                mStateService = MusicConstants.STATE_SERVICE.PREPARE;
+                sStateService = MusicConstants.STATE_SERVICE.PREPARE;
                 mNotificationManager.notify(MusicConstants.NOTIFICATION_ID_FOREGROUND_SERVICE, prepareNotification());
                 Log.i(TAG, "Clicked Play");
                 destroyPlayer();
@@ -136,7 +136,7 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
     public void onDestroy() {
         Log.d(TAG, "onDestroy()");
         destroyPlayer();
-        mStateService = MusicConstants.STATE_SERVICE.NOT_INIT;
+        sStateService = MusicConstants.STATE_SERVICE.NOT_INIT;
         try {
             mTimerUpdateHandler.removeCallbacksAndMessages(null);
         } catch (Exception e) {
@@ -167,7 +167,7 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
         destroyPlayer();
         mHandler.postDelayed(mDelayedShutdown, MusicConstants.DELAY_SHUTDOWN_FOREGROUND_SERVICE);
         mNotificationManager.notify(MusicConstants.NOTIFICATION_ID_FOREGROUND_SERVICE, prepareNotification());
-        mStateService = MusicConstants.STATE_SERVICE.PAUSE;
+        sStateService = MusicConstants.STATE_SERVICE.PAUSE;
         return false;
     }
 
@@ -217,18 +217,15 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
                 mNotificationManager.getNotificationChannel(FOREGROUND_CHANNEL_ID) == null) {
             // The user-visible name of the channel.
             CharSequence name = getString(R.string.text_value_radio_notification);
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            int importance = NotificationManager.IMPORTANCE_LOW;
             NotificationChannel mChannel = new NotificationChannel(FOREGROUND_CHANNEL_ID, name, importance);
+            mChannel.setSound(null, null);
             mChannel.enableVibration(false);
             mNotificationManager.createNotificationChannel(mChannel);
         }
         Intent notificationIntent = new Intent(this, MainActivity.class);
         notificationIntent.setAction(MusicConstants.ACTION.MAIN_ACTION);
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB) {
-            notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        } else {
-            notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        }
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
@@ -247,7 +244,7 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
         RemoteViews lRemoteViews = new RemoteViews(getPackageName(), R.layout.radio_notification);
         lRemoteViews.setOnClickPendingIntent(R.id.ui_notification_close_button, lPendingStopIntent);
 
-        switch (mStateService) {
+        switch (sStateService) {
 
             case MusicConstants.STATE_SERVICE.PAUSE:
                 lRemoteViews.setViewVisibility(R.id.ui_notification_progress_bar, View.INVISIBLE);
@@ -283,7 +280,7 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            lNotificationBuilder.setVisibility(Notification.VISIBILITY_PUBLIC);
+            lNotificationBuilder.setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
         }
         return lNotificationBuilder.build();
 
@@ -292,7 +289,7 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
     @Override
     public void onPrepared(MediaPlayer mp) {
         Log.d(TAG, "Player onPrepared()");
-        mStateService = MusicConstants.STATE_SERVICE.PLAY;
+        sStateService = MusicConstants.STATE_SERVICE.PLAY;
         mNotificationManager.notify(MusicConstants.NOTIFICATION_ID_FOREGROUND_SERVICE, prepareNotification());
         try {
             mPlayer.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
@@ -310,6 +307,9 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
 
     private void lockCPU() {
         PowerManager mgr = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        if (mgr == null) {
+            return;
+        }
         mWakeLock = mgr.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, this.getClass().getSimpleName());
         mWakeLock.acquire();
         Log.d(TAG, "Player lockCPU()");
@@ -324,17 +324,18 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
     }
 
     private void lockWiFi() {
-        ConnectivityManager connManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        ConnectivityManager connManager = (ConnectivityManager) getApplicationContext().getSystemService(CONNECTIVITY_SERVICE);
+        if (connManager == null) {
+            return;
+        }
         NetworkInfo lWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
         if (lWifi != null && lWifi.isConnected()) {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB_MR1) {
-                mWiFiLock = ((WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE)).createWifiLock(
-                        WifiManager.WIFI_MODE_FULL_HIGH_PERF, SoundService.class.getSimpleName());
-            } else {
-                mWiFiLock = ((WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE)).createWifiLock(
+            WifiManager manager = ((WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE));
+            if (manager != null) {
+                mWiFiLock = manager.createWifiLock(
                         WifiManager.WIFI_MODE_FULL, SoundService.class.getSimpleName());
+                mWiFiLock.acquire();
             }
-            mWiFiLock.acquire();
             Log.d(TAG, "Player lockWiFi()");
         }
     }
