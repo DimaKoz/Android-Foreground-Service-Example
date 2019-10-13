@@ -9,6 +9,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
+import android.media.MediaDataSource;
 import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -95,6 +96,7 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
             case MusicConstants.ACTION.START_ACTION:
                 Log.i(TAG, "Received start Intent ");
                 sStateService = MusicConstants.STATE_SERVICE.PREPARE;
+
                 startForeground(MusicConstants.NOTIFICATION_ID_FOREGROUND_SERVICE, prepareNotification());
                 destroyPlayer();
                 initPlayer();
@@ -217,7 +219,7 @@ public class SoundService extends Service implements MediaPlayer.OnErrorListener
                 mNotificationManager.getNotificationChannel(FOREGROUND_CHANNEL_ID) == null) {
             // The user-visible name of the channel.
             CharSequence name = getString(R.string.text_value_radio_notification);
-            int importance = NotificationManager.IMPORTANCE_LOW;
+            int importance = NotificationManager.IMPORTANCE_HIGH;
             NotificationChannel mChannel = new NotificationChannel(FOREGROUND_CHANNEL_ID, name, importance);
             mChannel.setSound(null, null);
             mChannel.enableVibration(false);
