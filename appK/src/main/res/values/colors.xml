@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <color name="white">#ffFFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="notification_color_control_highlight">#deeeff</color>
+    <color name="notification_color_accent">#50000000</color>
+    <color name="notification_color_title_text">@color/white</color>
+    <color name="notification_color_title_text_material">@color/black</color>
+
+</resources>
